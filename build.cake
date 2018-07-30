@@ -4,12 +4,12 @@
 #addin "nuget:https://api.nuget.org/v3/index.json?package=Cake.Gitter&version=0.7.0"
 
 // Install tools.
-#tool "nuget:https://api.nuget.org/v3/index.json?package=gitreleasemanager&version=0.5.0"
+#tool "nuget:https://api.nuget.org/v3/index.json?package=gitreleasemanager&version=0.7.0"
 #tool "nuget:https://api.nuget.org/v3/index.json?package=GitVersion.CommandLine&version=3.6.2"
 #tool "nuget:https://api.nuget.org/v3/index.json?package=coveralls.io&version=1.3.4"
 #tool "nuget:https://api.nuget.org/v3/index.json?package=OpenCover&version=4.6.519"
 #tool "nuget:https://api.nuget.org/v3/index.json?package=ReportGenerator&version=2.4.5"
-#tool "nuget:https://api.nuget.org/v3/index.json?package=SignClient&version=0.9.1&exclude=/tools/netcoreapp2*/**/*"
+#tool "nuget:https://api.nuget.org/v3/index.json?package=SignClient&version=0.9.1&include=/tools/netcoreapp2.0/SignClient.dll"
 
 // Load other scripts.
 #load "./build/parameters.cake"
@@ -122,9 +122,7 @@ Task("Restore-NuGet-Packages")
         Verbosity = DotNetCoreVerbosity.Minimal,
         Sources = new [] {
             "https://www.myget.org/F/xunit/api/v3/index.json",
-            "https://dotnet.myget.org/F/dotnet-core/api/v3/index.json",
-            "https://dotnet.myget.org/F/cli-deps/api/v3/index.json",
-            "https://api.nuget.org/v3/index.json",
+            "https://api.nuget.org/v3/index.json"
         },
         MSBuildSettings = msBuildSettings
     });
@@ -139,6 +137,7 @@ Task("Build")
     DotNetCoreBuild(path.FullPath, new DotNetCoreBuildSettings()
     {
         Configuration = parameters.Configuration,
+        NoRestore = true,
         MSBuildSettings = msBuildSettings
     });
 });
@@ -150,8 +149,29 @@ Task("Run-Unit-Tests")
     var projects = GetFiles("./src/**/*.Tests.csproj");
     foreach(var project in projects)
     {
-        DotNetCoreTool(project,
-            "xunit",  "--no-build -noshadow -configuration " + parameters.Configuration);
+        // .NET Core
+        DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
+        {
+            Framework = "netcoreapp2.0",
+            NoBuild = true,
+            NoRestore = true,
+            Configuration = parameters.Configuration
+        });
+
+        // .NET Framework/Mono
+        // Total hack, but gets the work done.
+        var framework = "net46";
+        if(project.ToString().EndsWith("Cake.Tests.csproj")) {
+            framework = "net461";
+        }
+
+        DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
+        {
+            Framework = framework,
+            NoBuild = true,
+            NoRestore = true,
+            Configuration = parameters.Configuration
+        });
     }
 });
 
@@ -163,6 +183,7 @@ Task("Copy-Files")
     DotNetCorePublish("./src/Cake", new DotNetCorePublishSettings
     {
         Framework = "net461",
+        NoRestore = true,
         VersionSuffix = parameters.Version.DotNetAsterix,
         Configuration = parameters.Configuration,
         OutputDirectory = parameters.Paths.Directories.ArtifactsBinFullFx,
@@ -172,7 +193,8 @@ Task("Copy-Files")
     // .NET Core
     DotNetCorePublish("./src/Cake", new DotNetCorePublishSettings
     {
-        Framework = "netcoreapp1.0",
+        Framework = "netcoreapp2.0",
+        NoRestore = true,
         Configuration = parameters.Configuration,
         OutputDirectory = parameters.Paths.Directories.ArtifactsBinNetCore,
         MSBuildSettings = msBuildSettings
@@ -184,7 +206,7 @@ Task("Copy-Files")
 
     // Copy Cake.XML (since publish does not do this anymore)
     CopyFileToDirectory("./src/Cake/bin/" + parameters.Configuration + "/net461/Cake.xml", parameters.Paths.Directories.ArtifactsBinFullFx);
-    CopyFileToDirectory("./src/Cake/bin/" + parameters.Configuration + "/netcoreapp1.0/Cake.xml", parameters.Paths.Directories.ArtifactsBinNetCore);
+    CopyFileToDirectory("./src/Cake/bin/" + parameters.Configuration + "/netcoreapp2.0/Cake.xml", parameters.Paths.Directories.ArtifactsBinNetCore);
 });
 
 Task("Zip-Files")
@@ -243,6 +265,7 @@ Task("Create-NuGet-Packages")
             Configuration = parameters.Configuration,
             OutputDirectory = parameters.Paths.Directories.NugetRoot,
             NoBuild = true,
+            NoRestore = true,
             IncludeSymbols = true,
             MSBuildSettings = msBuildSettings
         });
@@ -308,7 +331,7 @@ Task("Sign-Binaries")
     .IsDependentOn("Zip-Files")
     .IsDependentOn("Create-Chocolatey-Packages")
     .IsDependentOn("Create-NuGet-Packages")
-    .WithCriteria(() => 
+    .WithCriteria(() =>
         (parameters.ShouldPublish && !parameters.SkipSigning) ||
         StringComparer.OrdinalIgnoreCase.Equals(EnvironmentVariable("SIGNING_TEST"), "True"))
     .Does(() =>

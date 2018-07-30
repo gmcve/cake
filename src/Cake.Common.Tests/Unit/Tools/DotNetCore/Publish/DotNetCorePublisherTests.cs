@@ -105,18 +105,47 @@ namespace Cake.Common.Tests.Unit.Tools.DotNetCore.Publish
             {
                 // Given
                 var fixture = new DotNetCorePublisherFixture();
+                fixture.Settings.NoDependencies = true;
+                fixture.Settings.NoRestore = true;
                 fixture.Settings.Framework = "dnxcore50";
                 fixture.Settings.Configuration = "Release";
                 fixture.Settings.Runtime = "runtime1";
                 fixture.Settings.OutputDirectory = "./artifacts/";
                 fixture.Settings.VersionSuffix = "rc1";
                 fixture.Settings.Verbosity = DotNetCoreVerbosity.Minimal;
+                fixture.Settings.Force = true;
+                fixture.Settings.SelfContained = true;
+                fixture.Settings.Sources = new[] { "https://api.nuget.org/v3/index.json" };
 
                 // When
                 var result = fixture.Run();
 
                 // Then
-                Assert.Equal("publish --output \"/Working/artifacts\" --runtime runtime1 --framework dnxcore50 --configuration Release --version-suffix rc1 --verbosity Minimal", result.Args);
+                Assert.Equal("publish --output \"/Working/artifacts\" --runtime runtime1 --framework dnxcore50 --configuration Release --version-suffix rc1 --no-dependencies --no-restore --force --self-contained --source \"https://api.nuget.org/v3/index.json\" --verbosity Minimal", result.Args);
+            }
+
+            [Fact]
+            public void Should_Add_SelfContained_False_Settings()
+            {
+                // Given
+                var fixture = new DotNetCorePublisherFixture();
+                fixture.Settings.NoDependencies = true;
+                fixture.Settings.NoRestore = true;
+                fixture.Settings.Framework = "dnxcore50";
+                fixture.Settings.Configuration = "Release";
+                fixture.Settings.Runtime = "runtime1";
+                fixture.Settings.OutputDirectory = "./artifacts/";
+                fixture.Settings.VersionSuffix = "rc1";
+                fixture.Settings.Verbosity = DotNetCoreVerbosity.Minimal;
+                fixture.Settings.Force = true;
+                fixture.Settings.SelfContained = false;
+                fixture.Settings.Sources = new[] { "https://api.nuget.org/v3/index.json" };
+
+                // When
+                var result = fixture.Run();
+
+                // Then
+                Assert.Equal("publish --output \"/Working/artifacts\" --runtime runtime1 --framework dnxcore50 --configuration Release --version-suffix rc1 --no-dependencies --no-restore --force --self-contained false --source \"https://api.nuget.org/v3/index.json\" --verbosity Minimal", result.Args);
             }
 
             [Fact]

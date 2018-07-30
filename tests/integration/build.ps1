@@ -54,8 +54,8 @@ $PSScriptRoot = split-path -parent $MyInvocation.MyCommand.Definition
 $Script = (Join-Path $PSScriptRoot "windows.cake")
 $ToolsPath = Join-Path $PSScriptRoot "tools"
 $NuGetPath = Join-Path $ToolsPath "nuget.exe"
-$DotNetChannel = "preview"
-$DotNetVersion = "1.1.5";
+$DotNetChannel = "Current"
+$DotNetVersion = "2.1.4";
 $DotNetInstallerUri = "https://dot.net/v1/dotnet-install.ps1";
 $NuGetUrl = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
 
@@ -170,6 +170,7 @@ if (!(Test-Path $NuGetPath)) {
 #####################################################################
 
 $Env:MyEnvironmentVariable = "Hello World"
+$Env:CAKE_INTEGRATION_TEST_ROOT = "../.."
 
 #####################################################################
 # RUN TESTS

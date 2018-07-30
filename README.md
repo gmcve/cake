@@ -2,6 +2,7 @@
 
 [![NuGet](https://img.shields.io/nuget/v/Cake.svg)](https://www.nuget.org/packages/Cake) [![MyGet](https://img.shields.io/myget/cake/vpre/Cake.svg?label=myget)](https://www.myget.org/gallery/cake) [![Chocolatey](https://img.shields.io/chocolatey/v/Cake.portable.svg)](https://chocolatey.org/packages/cake.portable)
 [![homebrew](https://img.shields.io/homebrew/v/cake.svg)](http://braumeister.org/formula/cake)
+[![Help Contribute to Open Source](https://www.codetriage.com/cake-build/cake/badges/users.svg)](https://www.codetriage.com/cake-build/cake)
 
 [![Source Browser](https://img.shields.io/badge/Browse-Source-green.svg)](http://sourcebrowser.io/Browse/cake-build/cake)
 
@@ -21,7 +22,7 @@ Cake (C# Make) is a build automation system with a C# DSL to do things like comp
 | Visual Studio Team Services | Windows      | ![VSTS Build Status](https://img.shields.io/vso/build/cake-build/af63183c-ac1f-4dbb-93bc-4fa862ea5809/1.svg)                                                        |                                                                                                                                                                     |
 | MyGet Build Services        | Windows      | [![MyGet Build Status](https://www.myget.org/BuildSource/Badge/cake-myget-build-service?identifier=53513546-050e-45de-9500-f161c99df6e2)](https://www.myget.org/)   |  &nbsp;                                                                                                                                                             |
 | Bitbucket Pipelines         | Linux        | [![Build Status](https://cakebitbucketpipelinesshield.azurewebsites.net/status/cakebuild/cake-integration-tests/develop)](https://cakebitbucketpipelinesshield.azurewebsites.net/url/cakebuild/cake-integration-tests/develop) | [![Build Status](https://cakebitbucketpipelinesshield.azurewebsites.net/status/cakebuild/cake-integration-tests/IntegrationTests_develop)](https://cakebitbucketpipelinesshield.azurewebsites.net/url/cakebuild/cake-integration-tests/IntegrationTests_develop) |
-| GitLabs                     | Linux      | [![build status](https://gitlab.com/cake-build/cake/badges/develop/build.svg)](https://gitlab.com/cake-build/cake/builds) |  &nbsp;                                                                                                                                                             |
+| GitLab                     | Linux      | [![build status](https://gitlab.com/cake-build/cake/badges/develop/build.svg)](https://gitlab.com/cake-build/cake/builds) |  &nbsp;                                                                                                                                                             |
 
 ## Code Coverage
 
@@ -115,7 +116,7 @@ chmod +x build.sh
 
 So you’re thinking about contributing to Cake? Great! It’s **really** appreciated.
 
-Make sure you've read the [contribution guidelines](https://cakebuild.net/docs/contributing/contribution-guidelines) before sending that epic pull request. You'll also need to sign the [contribution license agreement](https://cla2.dotnetfoundation.org/) (CLA) for anything other than a trivial change.  **NOTE:** The .NET Foundation CLA Bot will provide a link to this CLA within the PR that you submit if it is deemed as required.
+Make sure you've read the [contribution guidelines](https://cakebuild.net/docs/contributing/contribution-guidelines) before sending that epic pull request. You'll also need to sign the [contribution license agreement](https://cla.dotnetfoundation.org/cake-build/cake) (CLA) for anything other than a trivial change.  **NOTE:** The .NET Foundation CLA Bot will provide a link to this CLA within the PR that you submit if it is deemed as required.
 
 * Fork the repository.
 * Create a branch to work in.
@@ -131,7 +132,7 @@ Make sure you've read the [contribution guidelines](https://cakebuild.net/docs/c
 
 ## License
 
-Copyright © .NET Foundation, Patrik Svensson, Mattias Karlsson, Gary Ewan Park, Alistair Chapman, Martin Björkström and contributors.
+Copyright © .NET Foundation, Patrik Svensson, Mattias Karlsson, Gary Ewan Park, Alistair Chapman, Martin Björkström, Dave Glick, Pascal Berger and contributors.
 
 Cake is provided as-is under the MIT license. For more information see [LICENSE](https://github.com/cake-build/cake/blob/develop/LICENSE).
 
@@ -153,7 +154,7 @@ For more information see the [.NET Foundation Code of Conduct](http://www.dotnet
 
 ## Contribution License Agreement
 
-By signing the [CLA](https://cla2.dotnetfoundation.org/), the community is free to use your contribution to .NET Foundation projects.
+By signing the [CLA](https://cla.dotnetfoundation.org/cake-build/cake), the community is free to use your contribution to .NET Foundation projects.
 
 ## .NET Foundation
 

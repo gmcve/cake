@@ -1,3 +1,92 @@
+### New in 0.29.0 (Released 2018/07/06)
+
+* 2140 DotNetCorePublish does not respect SelfContained DotNetCorePublishSettings property.
+* 2203 Add Octopus Deploy Promote release support.
+* 2095 Add "--skipnontestassemblies" funcionality to CAKE's NUnit3Settings as it exists in original nunit3 test runner.
+* 2094 Add support for executing a single task without dependencies.
+* 2196 NuGet Repository information not settable in NuGet Pack.
+* 2185 Try to find vswhere.exe on the system if the tool is not registered.
+* 2154 Problem with loading abolute path scripts with #load preprocessor.
+* 2152 try resolve vstest.console.exe before guessing it.
+* 1609 Add additional VSTS actions.
+* 2195 Updated the WiX tool documentation.
+* 2193 Add Pascal and Dave to all required places.
+* 2188 The CLA link in readme seems invalid or broken.
+
+### New in 0.28.1 (Released 2018/06/18)
+
+* 2176 Skipped tasks show up multiple times in report
+* 2190 Suppress NuGet dependency warnings related to Cake.Core
+
+### New in 0.28.0 (Released 2018/05/31)
+
+* 2008 Allow defining a typed context to be used throughout a Cake script.
+* 1772 Provide access to the run target and ordered list of tasks
+* 1594 Add overload to WithCriteria which prints a message
+* 2174 Support multiple Support / Teardown
+* 2171 Add potential breaking change warning
+* 2163 Update to Roslyn 2.8.x packages, adding support for C# 7.3
+
+### New in 0.27.2 (Released 2018/05/15)
+
+* 2137 Dependency loading errors with Cake 0.27.1 and Cake.Powershell 0.4.5
+* 2134 Assembly conflicts during compilation
+
+### New in 0.27.1 (Released 2018/04/21)
+
+* 2132 Problems with loading certain assemblies (0.27.0)
+
+### New in 0.27.0 (Released 2018/04/19)
+
+* 2078 Support expand environment variables in script pre-processor directives
+* 2047 Specify version during Nuget Updating
+* 2005 Add entries for Setup/Teardown in report
+* 1908 Octopus Deploy tool does not support list-deployments call for octo.exe
+* 2116 Loading Newtonsoft.Json in Cake.CoreCLR throws during assembly loading
+* 2084 Cake does not load dependencies in correct order
+* 2082 Investigate NuGet local V3 cache
+* 2081 Possibility to override default nuget sources
+* 2079 Default sources not loaded if nuget_source is empty
+* 2119 DotNetCore Publish misses Force / Self contained / Sources settings
+* 2113 Error when loading tools without internet connection
+* 2106 Remove NUnit3Settings.ErrorOutputFile property
+* 2092 Unable to set 'no-build' and 'no-restore' when executing DotNetCoreRun
+* 2051 Add support for msbuild.exe /restore option
+* 2039 XUnit2Runner doesn't respect ParallelismOption.None
+* 2036 Don't output usage when an error occured.
+* 2031 Simplify setting FileVersion and InformationalVersion
+* 2029 Investigate in-process NuGet dependency resolution
+* 2014 In-process NuGet don’t support multiple feeds through config
+* 2003 Add possibility for AssemblyMetadata collection in CreateAssemblyInfo
+* 1887 DotNetCoreRestoreSettings: support option --force
+* 1557 Add support for MSBuild /consoleloggerparameters
+* 2062 Fixed typo 'need to'
+* 2035 Fix typo in README
+* 1213 NuGetPushSettings.Source: incorrect documentation
+
+### New in 0.26.1 (Released 2018/03/03)
+
+* 2063 Cake running on Mono can't load netstandard 2.0 assembly
+
+### New in 0.26.0 (Released 2018/02/26)
+
+* 1781 Update to .NET Core 2
+
+### New in 0.25.0 (Released 2018/01/17)
+
+* 1995 Make In-proc NuGet addin/tool installation default
+* 1994 Get MSBuild Verbosity enum from string
+* 1988 TeamCity writing start and end progress contains invalid messages property
+* 1974 ToDictionary on Mono causes "The type 'Dictionary<,>' is defined in an assembly that is not referenced"
+* 1998 Some .NET Core commands missing no dependencies/restore
+* 1997 Add the --trace option to the NUnit3Settings class.
+* 1992 Update to .NET Runtime 1.0.9 because security issues
+* 1989 Path unnecessarily trims backslash in already normalized string
+* 1987 Confusing Error from Bad Format String to Information()
+* 1937 UseInProcessClient=true is slow
+* 1982 CodeTriage - Get more Open Source Helpers
+* 1689 ChocolateyDownload should be documented to only work in paid edition
+
 ### New in 0.24.0 (Released 2017/12/29)
 
 * 1950 Allow Cake modules to be bootstrapped by Cake in a pre-processing phase

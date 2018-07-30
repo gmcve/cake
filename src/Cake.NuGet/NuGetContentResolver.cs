@@ -61,7 +61,7 @@ namespace Cake.NuGet
 
             // Get current framework.
             var provider = DefaultFrameworkNameProvider.Instance;
-            var current = NuGetFramework.Parse(_environment.Runtime.TargetFramework.FullName, provider);
+            var current = NuGetFramework.Parse(_environment.Runtime.BuiltFramework.FullName, provider);
 
             // Get all ref assemblies.
             var refAssemblies = _globber.GetFiles(path.FullPath + "/ref/**/*.dll");
@@ -99,7 +99,7 @@ namespace Cake.NuGet
 
             if (nearest == NuGetFramework.AnyFramework)
             {
-                var framework = _environment.Runtime.TargetFramework;
+                var framework = _environment.Runtime.BuiltFramework;
                 _log.Warning("Could not find any assemblies compatible with {0} in NuGet package {1}. " +
                              "Falling back to using root folder of NuGet package.", framework.FullName, package.Package);
             }
@@ -110,7 +110,16 @@ namespace Cake.NuGet
 
         private NuGetFramework ParseFromDirectoryPath(NuGetFramework current, DirectoryPath path)
         {
-            var queue = new Queue<string>(path.Segments);
+            var segments = path.Segments;
+
+            if (segments.Length == 1 &&
+                segments[0].Equals("lib", StringComparison.OrdinalIgnoreCase))
+            {
+                // Treat as AnyFramework if lib folder
+                return NuGetFramework.AnyFramework;
+            }
+
+            var queue = new Queue<string>(segments);
             while (queue.Count > 0)
             {
                 var other = NuGetFramework.Parse(queue.Dequeue(), DefaultFrameworkNameProvider.Instance);

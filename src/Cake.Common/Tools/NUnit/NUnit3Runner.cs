@@ -13,7 +13,7 @@ using Cake.Core.Tooling;
 namespace Cake.Common.Tools.NUnit
 {
     /// <summary>
-    /// The NUnit unit test runner.
+    /// The NUnit3 unit test runner.
     /// </summary>
     public sealed class NUnit3Runner : Tool<NUnit3Settings>
     {
@@ -99,6 +99,11 @@ namespace Cake.Common.Tools.NUnit
                 builder.Append("--stoponerror");
             }
 
+            if (settings.SkipNonTestAssemblies)
+            {
+                builder.Append("--skipnontestassemblies");
+            }
+
             if (settings.Work != null)
             {
                 builder.AppendQuoted(string.Format(CultureInfo.InvariantCulture, "--work={0}", settings.Work.MakeAbsolute(_environment).FullPath));
@@ -109,12 +114,12 @@ namespace Cake.Common.Tools.NUnit
                 builder.AppendQuoted(string.Format(CultureInfo.InvariantCulture, "--out={0}", settings.OutputFile.MakeAbsolute(_environment).FullPath));
             }
 
+            #pragma warning disable 0618
             if (settings.ErrorOutputFile != null)
             {
                 builder.AppendQuoted(string.Format(CultureInfo.InvariantCulture, "--err={0}", settings.ErrorOutputFile.MakeAbsolute(_environment).FullPath));
             }
 
-            #pragma warning disable 0618
             if (settings.Full)
             {
                 builder.Append("--full");
@@ -216,6 +221,11 @@ namespace Cake.Common.Tools.NUnit
                 builder.Append("--domain=" + settings.AppDomainUsage);
             }
 
+            if (settings.TraceLevel.HasValue)
+            {
+                builder.Append("--trace=" + settings.TraceLevel.Value.GetArgumentValue());
+            }
+
             if (settings.Params != null && settings.Params.Count > 0)
             {
                 foreach (var param in settings.Params)
@@ -251,7 +261,7 @@ namespace Cake.Common.Tools.NUnit
         }
 
         /// <summary>
-        /// Customized exit code handling.
+        /// Customized Nunit3 exit code handling.
         /// Throws <see cref="CakeException"/> on non-zero exit code
         /// </summary>
         /// <param name="exitCode">The process exit code</param>
@@ -273,6 +283,9 @@ namespace Cake.Common.Tools.NUnit
                         break;
                     case -4:
                         error = "Invalid test fixture";
+                        break;
+                    case -5:
+                        error = "Unload error";
                         break;
                     case -100:
                         error = "Unexpected error";

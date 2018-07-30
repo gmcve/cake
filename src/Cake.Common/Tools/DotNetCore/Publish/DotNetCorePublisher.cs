@@ -95,6 +95,48 @@ namespace Cake.Common.Tools.DotNetCore.Publish
                 builder.Append(settings.VersionSuffix);
             }
 
+            // No Dependencies
+            if (settings.NoDependencies)
+            {
+                builder.Append("--no-dependencies");
+            }
+
+            // No Restore
+            if (settings.NoRestore)
+            {
+                builder.Append("--no-restore");
+            }
+
+            // Force
+            if (settings.Force)
+            {
+                builder.Append("--force");
+            }
+
+            // Self contained
+            if (settings.SelfContained.HasValue)
+            {
+                if (settings.SelfContained.Value)
+                {
+                    builder.Append("--self-contained");
+                }
+                else
+                {
+                    builder.Append("--self-contained");
+                    builder.Append("false");
+                }
+            }
+
+            // Sources
+            if (settings.Sources != null)
+            {
+                foreach (var source in settings.Sources)
+                {
+                    builder.Append("--source");
+                    builder.AppendQuoted(source);
+                }
+            }
+
             if (settings.MSBuildSettings != null)
             {
                 builder.AppendMSBuildSettings(settings.MSBuildSettings, _environment);

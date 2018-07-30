@@ -1,8 +1,11 @@
 // Utilities
 #load "./utilities/paths.cake"
 #load "./utilities/xunit.cake"
+#load "./utilities/context.cake"
 
 // Tests
+#load "setup.cake"
+#load "teardown.cake"
 #load "./Cake.Common/ArgumentAliases.cake"
 #load "./Cake.Common/EnvironmentAliases.cake"
 #load "./Cake.Common/Diagnostics/LoggingAliases.cake"
@@ -20,8 +23,10 @@
 #load "./Cake.Common/Tools/Cake/CakeAliases.cake"
 #load "./Cake.Common/Tools/DotNetCore/DotNetCoreAliases.cake"
 #load "./Cake.Common/Tools/NuGet/NuGetAliases.cake"
+#load "./Cake.Core/Scripting/AddinDirective.cake"
 #load "./Cake.Core/Scripting/DefineDirective.cake"
 #load "./Cake.Core/Scripting/LoadDirective.cake"
+#load "./Cake.Core/Scripting/SystemCollections.cake"
 #load "./Cake.Core/Scripting/UsingDirective.cake"
 #load "./Cake.Core/Tooling/ToolLocator.cake"
 #load "./Cake.Core/CakeAliases.cake"
@@ -33,21 +38,14 @@
 var target = Argument<string>("target", "Run-All-Tests");
 
 //////////////////////////////////////////////////
-// SETUP / TEARDOWN
-//////////////////////////////////////////////////
-
-Setup(ctx =>
-{
-    CleanDirectory(Paths.Temp);
-});
-
-//////////////////////////////////////////////////
 // TARGETS
 //////////////////////////////////////////////////
 
 Task("Cake.Core")
+    .IsDependentOn("Cake.Core.Scripting.AddinDirective")
     .IsDependentOn("Cake.Core.Scripting.DefineDirective")
     .IsDependentOn("Cake.Core.Scripting.LoadDirective")
+    .IsDependentOn("Cake.Core.Scripting.SystemCollections")
     .IsDependentOn("Cake.Core.Scripting.UsingDirective")
     .IsDependentOn("Cake.Core.Tooling.ToolLocator")
     .IsDependentOn("Cake.Core.CakeAliases");
@@ -72,6 +70,7 @@ Task("Cake.Common")
     .IsDependentOn("Cake.Common.Tools.NuGet.NuGetAliases");
 
 Task("Run-All-Tests")
+    .IsDependentOn("Setup-Tests")
     .IsDependentOn("Cake.Core")
     .IsDependentOn("Cake.Common");
 

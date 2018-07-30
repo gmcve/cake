@@ -25,7 +25,7 @@ using PackageType = Cake.Core.Packaging.PackageType;
 
 namespace Cake.NuGet.Install
 {
-    internal sealed class NuGetPackageInstaller : INuGetPackageInstaller
+    internal sealed class NuGetPackageInstaller : INuGetPackageInstaller, IDisposable
     {
         private readonly IFileSystem _fileSystem;
         private readonly ICakeEnvironment _environment;
@@ -36,6 +36,7 @@ namespace Cake.NuGet.Install
         private readonly ILogger _nugetLogger;
         private readonly NuGetFramework _currentFramework;
         private readonly GatherCache _gatherCache;
+        private readonly SourceCacheContext _sourceCacheContext;
 
         static NuGetPackageInstaller()
         {
@@ -63,28 +64,23 @@ namespace Cake.NuGet.Install
             _contentResolver = contentResolver ?? throw new ArgumentNullException(nameof(contentResolver));
             _log = log ?? throw new ArgumentNullException(nameof(log));
             _config = config ?? throw new ArgumentNullException(nameof(config));
-            _currentFramework = NuGetFramework.Parse(_environment.Runtime.TargetFramework.FullName, DefaultFrameworkNameProvider.Instance);
+            _currentFramework = NuGetFramework.Parse(_environment.Runtime.BuiltFramework.FullName, DefaultFrameworkNameProvider.Instance);
             _nugetLogger = new NuGetLogger(_log);
 
             var nugetConfig = GetNuGetConfigPath(_environment, _config);
-
             var nugetConfigDirectoryPath = nugetConfig.Item1;
             var nugetConfigFilePath = nugetConfig.Item2;
 
-            if (nugetConfigFilePath != null)
-            {
-                _log.Debug($"Found NuGet.config at: {nugetConfigFilePath}");
-            }
-            else
-            {
-                _log.Debug("NuGet.config not found.");
-            }
+            _log.Debug(nugetConfigFilePath != null
+                ? $"Found NuGet.config at: {nugetConfigFilePath}"
+                : "NuGet.config not found.");
 
             _nugetSettings = Settings.LoadDefaultSettings(
                 nugetConfigDirectoryPath.FullPath,
                 nugetConfigFilePath?.GetFilename().ToString(),
                 new XPlatMachineWideSetting());
             _gatherCache = new GatherCache();
+            _sourceCacheContext = new SourceCacheContext();
         }
 
         public bool CanInstall(PackageReference package, PackageType type)
@@ -110,27 +106,42 @@ namespace Cake.NuGet.Install
             var packageRoot = path.MakeAbsolute(_environment).FullPath;
             var targetFramework = type == PackageType.Addin ? _currentFramework : NuGetFramework.AnyFramework;
             var sourceRepositoryProvider = new NuGetSourceRepositoryProvider(_nugetSettings, _config, package);
-            sourceRepositoryProvider.CreateRepository(packageRoot);
-            var packageIdentity = GetPackageId(package, sourceRepositoryProvider, targetFramework, _nugetLogger);
+            var pathResolver = new PackagePathResolver(packageRoot);
+            var project = new NugetFolderProject(_fileSystem, _contentResolver, _log, pathResolver, packageRoot, targetFramework);
+            var packageManager = new NuGetPackageManager(sourceRepositoryProvider, _nugetSettings, project.Root)
+            {
+                PackagesFolderNuGetProject = project
+            };
+
+            var packageIdentity = GetPackageId(package, packageManager, sourceRepositoryProvider, targetFramework, _sourceCacheContext, _nugetLogger);
             if (packageIdentity == null)
             {
                 return Array.Empty<IFile>();
             }
 
-            var pathResolver = new PackagePathResolver(packageRoot);
-            var project = new NugetFolderProject(_fileSystem, _contentResolver, _config, _log, pathResolver, packageRoot, targetFramework);
-            var packageManager = new NuGetPackageManager(sourceRepositoryProvider, _nugetSettings, project.Root)
-            {
-                PackagesFolderNuGetProject = project
-            };
-            var sourceRepositories = sourceRepositoryProvider.GetRepositories();
             var includePrerelease = package.IsPrerelease();
             var dependencyBehavior = GetDependencyBehavior(type, package);
-            var resolutionContext = new ResolutionContext(dependencyBehavior, includePrerelease, false, VersionConstraints.None, _gatherCache);
             var projectContext = new NuGetProjectContext(_log);
+            var resolutionContext = new ResolutionContext(dependencyBehavior, includePrerelease, false, VersionConstraints.None, _gatherCache, _sourceCacheContext);
+            var downloadContext = new PackageDownloadContext(_sourceCacheContext);
 
-            packageManager.InstallPackageAsync(project, packageIdentity, resolutionContext, projectContext,
-                sourceRepositories, Array.Empty<SourceRepository>(),
+            // First get the install actions.
+            // This will give us the list of packages to install, and which feed should be used.
+            var actions = packageManager.GetInstallProjectActionsAsync(
+                project,
+                packageIdentity,
+                resolutionContext,
+                projectContext,
+                sourceRepositoryProvider.GetPrimaryRepositories(),
+                sourceRepositoryProvider.GetRepositories(),
+                CancellationToken.None).Result;
+
+            // Then install the packages.
+            packageManager.ExecuteNuGetProjectActionsAsync(
+                project,
+                actions,
+                projectContext,
+                downloadContext,
                 CancellationToken.None).Wait();
 
             return project.GetFiles(path, package, type);
@@ -155,36 +166,56 @@ namespace Cake.NuGet.Install
                 environment.WorkingDirectory.Combine("tools").MakeAbsolute(environment).FullPath;
         }
 
-        private static PackageIdentity GetPackageId(PackageReference package, NuGetSourceRepositoryProvider sourceRepositoryProvider, NuGetFramework targetFramework, ILogger logger)
+        private static PackageIdentity GetPackageId(PackageReference package, NuGetPackageManager packageManager, NuGetSourceRepositoryProvider sourceRepositoryProvider, NuGetFramework targetFramework, SourceCacheContext sourceCacheContext, ILogger logger)
         {
-            var version = GetNuGetVersion(package, sourceRepositoryProvider, targetFramework, logger);
+            var version = GetNuGetVersion(package, packageManager, sourceRepositoryProvider, targetFramework, sourceCacheContext, logger);
             return version == null ? null : new PackageIdentity(package.Package, version);
         }
 
-        private static NuGetVersion GetNuGetVersion(PackageReference package, NuGetSourceRepositoryProvider sourceRepositoryProvider, NuGetFramework targetFramework, ILogger logger)
+        private static NuGetVersion GetNuGetVersion(PackageReference package, NuGetPackageManager packageManager, NuGetSourceRepositoryProvider sourceRepositoryProvider, NuGetFramework targetFramework, SourceCacheContext sourceCacheContext, ILogger logger)
         {
             if (package.Parameters.ContainsKey("version"))
             {
                 return new NuGetVersion(package.Parameters["version"].First());
             }
 
-            var includePrerelease = package.IsPrerelease();
-            foreach (var sourceRepository in sourceRepositoryProvider.GetRepositories())
-            {
-                var dependencyInfoResource = sourceRepository.GetResourceAsync<DependencyInfoResource>().Result;
-                var dependencyInfo = dependencyInfoResource.ResolvePackages(package.Package, targetFramework, logger, CancellationToken.None).Result;
-                var version = dependencyInfo
-                    .Where(p => p.Listed && (includePrerelease || !p.Version.IsPrerelease))
-                    .OrderByDescending(p => p.Version, VersionComparer.Default)
-                    .Select(p => p.Version)
-                    .FirstOrDefault();
+            // Only search for latest version in local and primary sources.
+            var repositories = new HashSet<SourceRepository>(new SourceRepositoryComparer());
+            repositories.Add(packageManager.PackagesFolderSourceRepository);
+            repositories.AddRange(packageManager.GlobalPackageFolderRepositories);
+            repositories.AddRange(sourceRepositoryProvider.GetPrimaryRepositories());
 
-                if (version != null)
+            var includePrerelease = package.IsPrerelease();
+            NuGetVersion version = null;
+            foreach (var sourceRepository in repositories)
+            {
+                try
                 {
-                    return version;
+                    var dependencyInfoResource = sourceRepository.GetResourceAsync<DependencyInfoResource>().Result;
+                    var dependencyInfo = dependencyInfoResource.ResolvePackages(package.Package, targetFramework, sourceCacheContext, logger, CancellationToken.None).Result;
+                    var foundVersion = dependencyInfo
+                        .Where(p => p.Listed && (includePrerelease || !p.Version.IsPrerelease))
+                        .OrderByDescending(p => p.Version, VersionComparer.Default)
+                        .Select(p => p.Version)
+                        .FirstOrDefault();
+
+                    // Find the highest possible version
+                    version = version ?? foundVersion;
+                    if (foundVersion != null && foundVersion > version)
+                    {
+                        version = foundVersion;
+                    }
+                }
+                catch (AggregateException ae)
+                {
+                    ae.Handle(e =>
+                    {
+                        logger.LogWarning(e.Message);
+                        return true;
+                    });
                 }
             }
-            return null;
+            return version;
         }
 
         private static Tuple<DirectoryPath, FilePath> GetNuGetConfigPath(ICakeEnvironment environment, ICakeConfiguration config)
@@ -207,6 +238,11 @@ namespace Cake.NuGet.Install
             }
 
             return Tuple.Create(rootPath, filePath);
+        }
+
+        public void Dispose()
+        {
+            _sourceCacheContext?.Dispose();
         }
     }
 }
